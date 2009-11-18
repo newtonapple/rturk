@@ -51,6 +51,18 @@ module RTurk
   # </SearchHITsResult>
   
   class SearchHITsResponse < Response
+    attr_reader :page_size, :total_size, :page_number
+    
+    def initialize(response)
+      @raw_xml = response
+      @xml = Nokogiri::XML(@raw_xml)
+      raise_errors
+      map_content(@xml.xpath('//SearchHITsResult'),
+        :page_size => 'NumResults',
+        :total_size => 'TotalNumResults',
+        :page_number => 'PageNumber'
+      )
+    end
     
     def hits
       @hits ||= begin
