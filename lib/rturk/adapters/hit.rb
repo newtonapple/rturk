@@ -17,8 +17,8 @@ module RTurk
   #     end
   #     
   #     hit.url #=>  'http://mturk.amazonaws.com/?group_id=12345678'
-  
-  
+
+
   class Hit
     include RTurk::XMLUtilities
 
@@ -28,23 +28,45 @@ module RTurk
         response = RTurk::CreateHIT(*args, &blk)
         new(response.hit_id, response)
       end
-      
+
       def find(id)
         
       end
-      
+
       def all_reviewable
         RTurk.GetReviewableHITs.hit_ids.inject([]) do |arr, hit_id|
           arr << new(hit_id); arr
         end
       end
-      
+
       def all
         RTurk.SearchHITs.hits.inject([]) do |arr, hit|
           arr << new(hit.id, hit); arr;
         end
       end
 
+      def each(options={})
+        page_number = options[:page_number] || 1
+        if delay = options[:delay]
+          each_page(page_number) do |batch|
+            batch.each { |hit| yield hit }
+            sleep(delay)
+          end
+        else
+          each_page(page) do |batch|
+            batch.each { |hit| yield hit }
+          end
+        end
+      end
+
+      def each_page(page_number=1, page_size=100)
+        loop do
+          results = RTurk::SearchHITs.create(:sort_by => {:enumeration=>:desc}, :page_size => page_size, :page_number => page_number)
+          break if results.page_size == 0
+          page_number += 1
+          yield results.hits.collect { |hit| new(hit.id, hit) }
+        end
+      end
     end
 
     attr_accessor :id, :source
@@ -58,19 +80,19 @@ module RTurk
         arr << RTurk::Assignment.new(assignment.assignment_id, assignment); arr
       end
     end
-    
+
     def details
       @details ||= RTurk::GetHIT(:hit_id => self.id)
     end
-     
+
     def expire!
       RTurk::ForceExpireHIT(:hit_id => self.id)
     end
-    
+
     def dispose!
       RTurk::DisposeHIT(:hit_id => self.id) 
     end
-    
+
     def disable!
       RTurk::DisableHIT(:hit_id => self.id) 
     end
