@@ -46,7 +46,7 @@ module RTurk
   
   class GetHITResponse < Response
     
-    attr_reader :hit_id, :type_id, :status, :review_status, :title, :created_at, :expires_at,
+    attr_reader :hit_id, :type_id, :status, :review_status, :title, :note, :created_at, :expires_at,
                 :assignments_duration, :reward_amount, :max_assignments, :auto_approval_delay
     
     def initialize(response)
@@ -59,6 +59,7 @@ module RTurk
         :status => 'HITStatus',
         :review_status => 'HITReviewStatus',
         :title => 'Title',
+        :note  => 'RequesterAnnotation',
         :created_at => 'CreationTime',
         :expires_at => 'Expiration',
         :assignments_duration => 'AssignmentDurationInSeconds',
