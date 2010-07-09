@@ -23,7 +23,7 @@ module RTurk
           'Service'=>'AWSMechanicalTurkRequester',
           'AWSAccessKeyId' => credentials.access_key,
           'Timestamp' => Time.now.iso8601,
-          'Version' => '2008-08-02'
+          'Version' => RTurk::API_VERSION
         }
 
         params.merge!(base_params)
@@ -33,16 +33,16 @@ module RTurk
         RTurk.logger.debug "Sending request:\n\t #{credentials.host}?#{querystring}"
         RestClient.get("#{credentials.host}?#{querystring}")
       end
-
+      
+      def sign(secret_key, service,method,time)
+        msg = "#{service}#{method}#{time}"
+        return hmac_sha1(secret_key, msg )
+      end
+      
       private
       
         def credentials
           RTurk
-        end
-
-        def sign(secret_key, service,method,time)
-          msg = "#{service}#{method}#{time}"
-          return hmac_sha1(secret_key, msg )
         end
 
         def hmac_sha1(key, s)

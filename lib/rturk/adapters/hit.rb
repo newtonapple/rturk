@@ -1,13 +1,13 @@
 module RTurk
 
   # =The RTurk Hit Adapter
-  # 
+  #
   # Lets us interact with Mechanical Turk without having to know all the operations.
   #
   # == Basic usage
   # @example
   #     require 'rturk'
-  # 
+  #
   #     RTurk.setup(YourAWSAccessKeyId, YourAWSAccessKey, :sandbox => true)
   #     hit = RTurk::Hit.create(:title => "Add some tags to a photo") do |hit|
   #       hit.assignments = 2
@@ -15,22 +15,21 @@ module RTurk
   #       hit.reward = 0.05
   #       hit.qualifications.approval_rate, {:gt => 80}
   #     end
-  #     
+  #
   #     hit.url #=>  'http://mturk.amazonaws.com/?group_id=12345678'
 
 
   class Hit
     include RTurk::XMLUtilities
 
-    class << self;
-
+    class << self
       def create(*args, &blk)
         response = RTurk::CreateHIT(*args, &blk)
         new(response.hit_id, response)
       end
 
       def find(id)
-        
+
       end
 
       def all_reviewable
@@ -75,14 +74,20 @@ module RTurk
       @id, @source = id, source
     end
 
+    # memoing
     def assignments
-      RTurk::GetAssignmentsForHIT(:hit_id => self.id).assignments.inject([]) do |arr,assignment|
-        arr << RTurk::Assignment.new(assignment.assignment_id, assignment); arr
-      end
+      @assignments ||=
+        RTurk::GetAssignmentsForHIT(:hit_id => self.id).assignments.inject([]) do |arr, assignment|
+          arr << RTurk::Assignment.new(assignment.assignment_id, assignment)
+        end
     end
 
     def details
       @details ||= RTurk::GetHIT(:hit_id => self.id)
+    end
+
+    def extend!(options = {})
+      RTurk::ExtendHIT(options.merge({:hit_id => self.id}))
     end
 
     def expire!
@@ -90,11 +95,11 @@ module RTurk
     end
 
     def dispose!
-      RTurk::DisposeHIT(:hit_id => self.id) 
+      RTurk::DisposeHIT(:hit_id => self.id)
     end
 
     def disable!
-      RTurk::DisableHIT(:hit_id => self.id) 
+      RTurk::DisableHIT(:hit_id => self.id)
     end
 
 
